@@ -45,6 +45,10 @@ void updateStates(){
 
 int main(){
     TerrainHandler th;
-    th.loadTile(90,90);
+    Tile test_tile;
+    std::shared_ptr<float> ptr(th.loadTile(90,90),free);
+    test_tile.ptr = ptr;
+
+    th.printTile(test_tile);
     return 0;
 }

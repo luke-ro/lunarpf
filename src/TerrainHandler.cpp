@@ -80,7 +80,7 @@ std::vector<Eigen::Vector3d> TerrainHandler::getNearestPoints(double x, double y
 
 
 
-uint32_t* TerrainHandler::loadTile(int i, int j){
+float* TerrainHandler::loadTile(int i, int j){
     std::string filename =  "/media/sf_repos/lunarpf/topo_maps/x_000_y_000_km.tiff";
     std::string si = std::to_string(i);
     std::string sj = std::to_string(j);
@@ -127,7 +127,7 @@ uint32_t* TerrainHandler::loadTile(int i, int j){
                             // the datatype by calling TinyTIFFReader_getSampleFormat().
         
                 
-        free(image); 
+        return image; 
     } 
     TinyTIFFReader_close(tiffr); 
     return nullptr;
@@ -151,24 +151,35 @@ void TerrainHandler::manageTiles(){
 void TerrainHandler::printTile(Tile tile){
     char chars[69] = {'$','@','B','%','8','&','W','M','#','*','o','a','h','k','b','d','p','q','w','m','Z','O','0','Q','L','C','J','U','Y','X','z','c','v','u','n','x','r','j','f','t','/','\\','|','(',')','1','{','}','[',']','?','-','_','+','~','<','>','i','!','l','I',';',':',',','\"','^','`','\'','.'};
     const int box_size = 40; 
+    const int box_elems = box_size*box_size;
     const int n_boxes = 2000/box_size;
 
-    double min = -2000;
-    double max = 2000;
+    double min = -1000;
+    double max = 0;
 
-    char to_print = {0};
+    char to_print[n_boxes*n_boxes] = {0};
     double intensity;
-    // for(int i=0; i<n_boxes; i++){
-    //     for(int j=0; j<n_boxes; j++){
-    //         intensity = 0.0;
-    //         for(int k=0; k<box_size; k++){
-    //             for(int m=0; m<box_size; m++){
-    //                 intensity+=((float*)tile.ptr)[k*box_size+];
-    //             }
-    //         }
-    //         to_print[i*40+j] = intensity;
-    //     }
-    // }
+    for(int i=0; i<n_boxes; i++){
+        for(int j=0; j<n_boxes; j++){
+            intensity = 0.0;
+            for(int k=0; k<box_size; k++){
+                for(int m=0; m<box_size; m++){
+                    int offset = ((i*k)*2000 + j*box_size);
+                    intensity+=(tile.ptr.get()[offset+(k*box_size+m)])/box_elems;
+                }
+            }
+            std::cout<<intensity<<", ";
+            to_print[i*n_boxes+j] = chars[int(floor(69.0*(intensity-min)/(max-min)))];
+        }
+        std::cout<<"\n";
+    }
+
+    for(int i=0;i<n_boxes;i++){
+        for(int j=0;j<n_boxes;j++){
+            std::cout<<to_print[i*n_boxes+j];
+        }
+        std::cout<<"\n";
+    }
 
     return;
 

@@ -10,15 +10,16 @@
 #include "tinytiffreader.h"
 #include "tinytiffreader.hxx"
 
+struct Tile
+{
+    std::shared_ptr<float> ptr = nullptr;
+    bool used = false;
+};
+
 //Need some way to handle the different terrain tiles and to get height AGL 
 class TerrainHandler{
     public:
 
-    struct Tile
-    {
-        std::shared_ptr<uint32_t> ptr = nullptr;
-        bool used = false;
-    };
     
 
     TerrainHandler(){}
@@ -43,7 +44,7 @@ class TerrainHandler{
     // converts from lat,lon to coords that correlate with the topo maps
     std::pair<double,double> latlon2topo(double lat, double lon);
 
-    uint32_t* loadTile(int i, int j);
+    float* loadTile(int i, int j);
     void printTile(Tile tile);
 
     private: 
