@@ -104,7 +104,7 @@ uint32_t* TerrainHandler::loadTile(int i, int j){
         const uint16_t bitspersample=TinyTIFFReader_getBitsPerSample(tiffr, 0);      
         std::cout<<bitspersample<<"\n";
         
-        uint32_t* image=(uint32_t*)calloc(width*height, bitspersample/8);  
+        float* image=(float*)calloc(width*height, bitspersample/8);  
         TinyTIFFReader_getSampleData(tiffr, image, 0); 
                 
         std::cout<<"here\n";
@@ -113,7 +113,7 @@ uint32_t* TerrainHandler::loadTile(int i, int j){
         // for(int i=height-2; i<height; i++){
         int i = height-1;
             for (int j=width-51; j<width;j++){
-                data = ((float*)image)[i*width+j];
+                data = (image)[i*width+j];
                 printf("%f\n",data);
                 // float temp = ((float*)image)[i*j];
             }
