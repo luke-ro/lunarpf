@@ -86,14 +86,16 @@ uint32_t* TerrainHandler::loadTile(int i, int j){
     std::string sj = std::to_string(j);
 
     for(int k=si.length()-1; k>=0; k--)
-        filename[k+36] = si[k];
+        filename[k+37] = si[k];
 
     for(int m=sj.length()-1; m>=0; m--)
-        filename[m+42] = si[m];
+        filename[m+43] = si[m];
 
     const char* c_filename = filename.c_str();
     TinyTIFFReaderFile* tiffr=NULL;
     tiffr=TinyTIFFReader_open(c_filename); 
+
+    std::cout<<c_filename<<"\n";
     if (!tiffr) { 
         std::cout<<"    ERROR reading (not existent, not accessible or no TIFF file)\n"; 
     } else { 
