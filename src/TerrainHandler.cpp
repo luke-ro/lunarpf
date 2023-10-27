@@ -101,6 +101,8 @@ float* TerrainHandler::loadTile(int i, int j){
     } else { 
         const uint32_t width=TinyTIFFReader_getWidth(tiffr); 
         const uint32_t height=TinyTIFFReader_getHeight(tiffr);
+        std::cout<<"width: "<<width<<"\n";
+        std::cout<<"width: "<<height<<"\n";
         const uint16_t bitspersample=TinyTIFFReader_getBitsPerSample(tiffr, 0);      
         std::cout<<bitspersample<<"\n";
         
@@ -149,13 +151,14 @@ void TerrainHandler::manageTiles(){
 }
 
 void TerrainHandler::printTile(Tile tile){
-    char chars[69] = {'$','@','B','%','8','&','W','M','#','*','o','a','h','k','b','d','p','q','w','m','Z','O','0','Q','L','C','J','U','Y','X','z','c','v','u','n','x','r','j','f','t','/','\\','|','(',')','1','{','}','[',']','?','-','_','+','~','<','>','i','!','l','I',';',':',',','\"','^','`','\'','.'};
+    const int num_chars = 69;
+    char chars[num_chars] = {'$','@','B','%','8','&','W','M','#','*','o','a','h','k','b','d','p','q','w','m','Z','O','0','Q','L','C','J','U','Y','X','z','c','v','u','n','x','r','j','f','t','1','{','}','[',']','?','/','\\','|','(',')','<','>','i','!','+','~','l','I',';',':','-','_',',','\"','^','`','\'','.'};
     const int box_size = 40; 
     const int box_elems = box_size*box_size;
     const int n_boxes = 2000/box_size;
 
-    double min = -1000;
-    double max = 0;
+    double min = -1900;
+    double max = 2000;
 
     char to_print[n_boxes*n_boxes] = {0};
     double intensity;
@@ -163,20 +166,20 @@ void TerrainHandler::printTile(Tile tile){
         for(int j=0; j<n_boxes; j++){
             intensity = 0.0;
             for(int k=0; k<box_size; k++){
+                int offset = (((i*box_size+k)*2000) + j*box_size);
                 for(int m=0; m<box_size; m++){
-                    int offset = ((i*k)*2000 + j*box_size);
-                    intensity+=(tile.ptr.get()[offset+(k*box_size+m)])/box_elems;
+                    intensity+=(tile.ptr.get()[offset+m])/box_elems;
                 }
             }
-            std::cout<<intensity<<", ";
-            to_print[i*n_boxes+j] = chars[int(floor(69.0*(intensity-min)/(max-min)))];
+            // std::cout<<intensity<<", ";
+            to_print[i*n_boxes+j] = chars[int(floor(double(num_chars)*(intensity-min)/(max-min)))];
         }
-        std::cout<<"\n";
+        // std::cout<<"\n";
     }
 
     for(int i=0;i<n_boxes;i++){
         for(int j=0;j<n_boxes;j++){
-            std::cout<<to_print[i*n_boxes+j];
+            std::cout<<to_print[i*n_boxes+j]<<" ";
         }
         std::cout<<"\n";
     }
