@@ -1,0 +1,2 @@
+add_library(TerrainHandler TerrainHandler.cpp)
+target_link_libraries(TerrainHandler TinyTIFF)

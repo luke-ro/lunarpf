@@ -1,12 +1,15 @@
 #include <iostream>
-
-
+#include <memory>
 
 #include "tinytiff_tools.hxx"
 #include "tinytiffreader.h"
 #include "tinytiffreader.hxx"
 
+//my libraries
+#include "../src/TerrainHandler.h"
 
+// in case I need characters from dark to light for pretty printing 
+// $@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\|()1{}[]?-_+~<>i!lI;:,"^`'.
 
 /**
  * @brief uses a particle filtering algorithm to run one step of 
@@ -41,39 +44,7 @@ void updateStates(){
 }
 
 int main(){
-    const char* filename = "/media/sf_repos/lunarpf/topo_maps/x_090_y_090_km.tiff";
-    TinyTIFFReaderFile* tiffr=NULL;
-    tiffr=TinyTIFFReader_open(filename); 
-    if (!tiffr) { 
-        std::cout<<"    ERROR reading (not existent, not accessible or no TIFF file)\n"; 
-    } else { 
-        const uint32_t width=TinyTIFFReader_getWidth(tiffr); 
-        const uint32_t height=TinyTIFFReader_getHeight(tiffr);
-        const uint16_t bitspersample=TinyTIFFReader_getBitsPerSample(tiffr, 0);      
-        std::cout<<bitspersample<<"\n";
-        uint32_t* image=(uint32_t*)calloc(width*height, bitspersample/8);  
-        TinyTIFFReader_getSampleData(tiffr, image, 0); 
-                
-        std::cout<<"here\n";
-        // for(int i=height-1;i>=0; i--){
-        float data;
-        for(int i=1; i<2; i++){
-            for (int j=0; j<50;j++){
-                data = ((float*)image)[i*j];
-                printf("%f\n",data);
-                // float temp = ((float*)image)[i*j];
-            }
-        }
-        std::cout<<"there\n";
-                            // HERE WE CAN DO SOMETHING WITH THE SAMPLE FROM THE IMAGE 
-                            // IN image (ROW-MAJOR!)
-                            // Note: That you may have to typecast the array image to the
-                            // datatype used in the TIFF-file. You can get the size of each
-                            // sample in bits by calling TinyTIFFReader_getBitsPerSample() and
-                            // the datatype by calling TinyTIFFReader_getSampleFormat().
-                
-        free(image); 
-    } 
-    TinyTIFFReader_close(tiffr); 
+    TerrainHandler th;
+    th.loadTile(90,90);
     return 0;
 }

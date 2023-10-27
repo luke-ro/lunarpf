@@ -1,4 +1,4 @@
-cmake -S ws/ -B build/
+# cmake -S ws/ -B build/
 cd build/
-cmake --build .
+cmake --build . --config "Debug"
 cd ..
