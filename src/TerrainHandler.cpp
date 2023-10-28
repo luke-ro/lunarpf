@@ -1,6 +1,7 @@
 #include "TerrainHandler.h"
 
 
+
 // converts lat.lon to stereographic coords x,y wit origin at south pole
 std::pair<double,double> TerrainHandler::latlon2stereo(double lat, double lon){
     //TODO!
@@ -14,9 +15,9 @@ std::pair<double,double> TerrainHandler::stereo2latlon(double x_stereo, double y
 }
 
 // converts stereographic x,y to an x,y pair that properly correlates with topo map coords
-std::pair<double,double> TerrainHandler::stereo2topo(double x_stereo, double y_stereo){
+std::pair<int,int> TerrainHandler::stereo2topo(double x_stereo, double y_stereo){
     //TODO!
-    return std::pair<double,double>(0,0);
+    return std::pair<int,int>(0,0);
 }
 
 //converts from the topo map x,y pair to stereographic x,y
@@ -32,9 +33,24 @@ std::pair<double,double> TerrainHandler::topo2latlon(double x_topo, double y_top
 }
 
 // converts from lat,lon to coords that correlate with the topo maps
-std::pair<double,double> TerrainHandler::latlon2topo(double lat, double lon){
+std::pair<int,int> TerrainHandler::latlon2topo(double lat, double lon){
     //TODO!
-    return std::pair<double,double>(0,0);
+    return std::pair<int,int>(0,0);
+}
+
+/**
+ * get the tile id for the tile that stereo coords lie in.  
+*/
+int TerrainHandler::getTileID(double x, double y){
+    std::pair<int,int> ij = stereo2topo(x,y);
+    return getTileID(ij.first,ij.second);
+}
+
+/**
+ * @brief get the tile id for topo indeces i j
+*/
+int TerrainHandler::getTileID(int i, int j){
+    return i*_tile_width+j;
 }
 
 
@@ -42,10 +58,9 @@ std::pair<double,double> TerrainHandler::latlon2topo(double lat, double lon){
 /**
  * @brief Returns the 
 */
-double TerrainHandler::getAGL(double lat, double lon, double z){
-
-
-    return z-getSurfaceHeight(lat,lon);
+double TerrainHandler::getAGL(double lat, double lon, double r){\
+    // radius minus surface height
+    return r-getSurfaceHeight(lat,lon);
 }
 
 /**
@@ -54,13 +69,42 @@ double TerrainHandler::getAGL(double lat, double lon, double z){
 double TerrainHandler::getSurfaceHeight(double lat, double lon){
     std::pair<double,double> xy_topo = latlon2topo(lat,lon);
 
-    // get nearest points to 
-    std::vector<Eigen::Vector3d> nearest = getNearestPoints(xy_topo.first, xy_topo.second);
+    // TODO Interpolate between adjacent cells
+    // // get nearest points to 
+    // std::vector<Eigen::Vector3d> nearest = getNearestPoints(xy_topo.first, xy_topo.second);
 
-    // get interpolated value at xy
-    double alt = interpolateSurface(nearest, xy_topo.first, xy_topo.second);
+    // // get interpolated value at xy
+    // double alt = interpolateSurface(nearest, xy_topo.first, xy_topo.second);
 
-    return 0.0;
+    Eigen::Vector3d near = getNearestPoint(xy_topo.first,xy_topo.second);
+
+    return near[2];
+}
+
+/**
+ * @brief gets the point nearest to topographic x y 
+*/
+Eigen::Vector3d TerrainHandler::getNearestPoint(double x, double y){
+    std::pair<int,int> ij = stereo2topo(x,y);
+    int id = getTileID(x,y);
+    if(_tiles.find(id)==_tiles.end())
+        loadTile(id);
+
+    // set used to true
+    _tiles[id].used = true;
+
+    double alt = getAltAtInd(ij.first, ij.second);
+
+    return Eigen::Vector3d(double(ij.first),double(ij.second),alt);
+}
+
+/**
+ * @brief gets the alt of the ground at indeces i and j rel to top left 
+*/
+double TerrainHandler::getAltAtInd(int i, int j){
+    int id = getTileID(i,j);
+    double alt = _tiles[id].ptr.get()[i*_tile_width+j];
+    return alt;
 }
 
 /**
@@ -69,15 +113,29 @@ double TerrainHandler::getSurfaceHeight(double lat, double lon){
 std::vector<Eigen::Vector3d> TerrainHandler::getNearestPoints(double x, double y){
     // if tile is not loaded:
         // load tile
+    int id = getTileID(x,y);
+    if(_tiles.find(id)==_tiles.end())
+        loadTile(id);
 
     
     // set used to true
+    _tiles[id].used = true;
 
-    // return the four closest points 
+    // return the four closest points TODO
     
     return std::vector<Eigen::Vector3d>();
 }
 
+void TerrainHandler::loadTile(int tile_id){
+    int i = floor(tile_id/20);
+    int j = tile_id%20;
+    std::shared_ptr<float> ptr(getTile(i,j),free);
+    Tile temp;
+    temp.ptr = ptr;
+    temp.used = true;
+    _tiles[tile_id] = temp;
+    return;
+}
 
 /**
  * @brief loads an image representing the height of the lunar surface
@@ -85,7 +143,7 @@ std::vector<Eigen::Vector3d> TerrainHandler::getNearestPoints(double x, double y
  * @param i the vertical identifier of the tile in 10's of km from the top
  * @param j the horizontal identifier of the tile in 10s of km from the left
 */
-float* TerrainHandler::loadTile(int i, int j){
+float* TerrainHandler::getTile(int i, int j){
     std::string filename =  "/media/sf_repos/lunarpf/topo_maps/x_000_y_000_km.tiff";
     std::string si = std::to_string(i);
     std::string sj = std::to_string(j);
@@ -144,6 +202,13 @@ double TerrainHandler::interpolateSurface(std::vector<Eigen::Vector3d> points, d
 
 void TerrainHandler::manageTiles(){
     //if a tile has not been used in the last iteration, free that memory
+    for (auto elem=_tiles.begin(); elem!=_tiles.end(); elem++){
+        if(!elem->second.used){
+            _tiles.erase(elem);
+            continue;
+        }
+        elem->second.used=false;
+    }
 
     //set the "used" bool to false for all remaining tiles
     return;

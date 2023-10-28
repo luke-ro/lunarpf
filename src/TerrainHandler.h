@@ -26,6 +26,7 @@ class TerrainHandler{
     double getAGL(double lat, double lon, double z);
     double getSurfaceHeight(double lat, double lon);
     std::vector<Eigen::Vector3d> getNearestPoints(double x, double y);
+    Eigen::Vector3d getNearestPoint(double x, double y);
 
     // converts lat.lon to stereographic coords x,y wit origin at south pole
     std::pair<double,double> latlon2stereo(double lat, double lon);
@@ -33,16 +34,16 @@ class TerrainHandler{
     std::pair<double,double> stereo2latlon(double x_stereo, double y_stereo);
 
     // converts stereographic x,y to an x,y pair that properly correlates with topo map coords
-    std::pair<double,double> stereo2topo(double x_stereo, double y_stereo);
+    std::pair<int,int> stereo2topo(double x_stereo, double y_stereo);
     //converts from the topo map x,y pair to stereographic x,y
     std::pair<double,double> topo2stereo(double x_topo, double y_topo);
 
     // uses converts from topographific map coords to lat,lon
     std::pair<double,double> topo2latlon(double x_topo, double y_topo);
     // converts from lat,lon to coords that correlate with the topo maps
-    std::pair<double,double> latlon2topo(double lat, double lon);
+    std::pair<int,int> latlon2topo(double lat, double lon);
 
-    float* loadTile(int i, int j);
+    float* getTile(int i, int j);
     void printTile(Tile tile);
 
     private: 
@@ -50,14 +51,26 @@ class TerrainHandler{
     // removes tiles that are no longer needed after a few iterations of disuse
     void manageTiles();
 
+    // get the altitude at given topo indeces (relative to top left)
+    double getAltAtInd(int i, int j);
+
     // given four points, interoplate the surface at the coordinate x,y
     double interpolateSurface(std::vector<Eigen::Vector3d> points, double x, double y);
 
     // shared_ptr<uint32_t> getNewTile()
-
+    void loadTile(int tile_id);
     
     // a unordered_map to store currently loaded topographic map tiles
     std::unordered_map<int, Tile > _tiles;
+
+    // gets a tile's ID based on stereographic x y coords
+    int getTileID(double x, double y);
+
+    // gets a tile's ID based on topo i j coords
+    int getTileID(int i, int j);
+
+    int _tile_width;
+    int _tile_height;
      
 };
 

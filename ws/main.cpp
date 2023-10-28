@@ -16,7 +16,7 @@
 int main(){
     TerrainHandler th;
     Tile test_tile;
-    std::shared_ptr<float> ptr(th.loadTile(90,90),free);
+    std::shared_ptr<float> ptr(th.getTile(90,90),free);
     test_tile.ptr = ptr;
 
     th.printTile(test_tile);
