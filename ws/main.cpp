@@ -11,37 +11,7 @@
 // in case I need characters from dark to light for pretty printing 
 // $@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\|()1{}[]?-_+~<>i!lI;:,"^`'.
 
-/**
- * @brief uses a particle filtering algorithm to run one step of 
-*/
-void runPF(/*a particle filtering algo?, initial states?*/){
-    
-    //initialize states:
 
-    // run pf
-
-    // get particles and propogate states based on that 
-}
-
-/**
- * @brief takes in particles and uses runge kutta to propogate states for each particle on it for timestep Dt
- * 
- * @param particles particles to propogate for time Dt
- * @param Dt
-*/
-void propogateStates(){
-    //runs RK on each particle for 
-}
-
-/**
- * @brief takes in all the current particles and current measurements to calculate current probablility for each particle
- * 
- * @param particles some sort of array or list of n particles
- * @param meas current altitude measurement 
-*/
-void updateStates(){
-    //loop through all the particles and update weights
-}
 
 int main(){
     TerrainHandler th;

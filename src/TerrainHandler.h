@@ -20,8 +20,6 @@ struct Tile
 class TerrainHandler{
     public:
 
-    
-
     TerrainHandler(){}
 
     // gets the height agl for a point at latitude lat and longitude lon

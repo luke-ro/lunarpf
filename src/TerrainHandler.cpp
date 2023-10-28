@@ -79,7 +79,12 @@ std::vector<Eigen::Vector3d> TerrainHandler::getNearestPoints(double x, double y
 }
 
 
-
+/**
+ * @brief loads an image representing the height of the lunar surface
+ * 
+ * @param i the vertical identifier of the tile in 10's of km from the top
+ * @param j the horizontal identifier of the tile in 10s of km from the left
+*/
 float* TerrainHandler::loadTile(int i, int j){
     std::string filename =  "/media/sf_repos/lunarpf/topo_maps/x_000_y_000_km.tiff";
     std::string si = std::to_string(i);
@@ -98,6 +103,7 @@ float* TerrainHandler::loadTile(int i, int j){
     std::cout<<c_filename<<"\n";
     if (!tiffr) { 
         std::cout<<"    ERROR reading (not existent, not accessible or no TIFF file)\n"; 
+        std::cout<<"Attempted to read in: "<<filename<<"\n";
     } else { 
         const uint32_t width=TinyTIFFReader_getWidth(tiffr); 
         const uint32_t height=TinyTIFFReader_getHeight(tiffr);
@@ -114,23 +120,16 @@ float* TerrainHandler::loadTile(int i, int j){
         float data;
         // for(int i=height-2; i<height; i++){
         int i = height-1;
-            for (int j=width-51; j<width;j++){
-                data = (image)[i*width+j];
-                printf("%f\n",data);
-                // float temp = ((float*)image)[i*j];
-            }
-        // }
-        std::cout<<"there\n";
-                            // HERE WE CAN DO SOMETHING WITH THE SAMPLE FROM THE IMAGE 
-                            // IN image (ROW-MAJOR!)
-                            // Note: That you may have to typecast the array image to the
-                            // datatype used in the TIFF-file. You can get the size of each
-                            // sample in bits by calling TinyTIFFReader_getBitsPerSample() and
-                            // the datatype by calling TinyTIFFReader_getSampleFormat().
-        
-                
+        for (int j=width-51; j<width;j++){
+            data = (image)[i*width+j];
+            printf("%f\n",data);
+            // float temp = ((float*)image)[i*j];
+        }
+
+        TinyTIFFReader_close(tiffr); 
         return image; 
     } 
+
     TinyTIFFReader_close(tiffr); 
     return nullptr;
 }
