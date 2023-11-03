@@ -4,14 +4,36 @@
 
 // converts lat.lon to stereographic coords x,y wit origin at south pole
 std::pair<double,double> TerrainHandler::latlon2stereo(double lat, double lon){
-    //TODO!
-    return std::pair<double,double>(0,0);
+    // https://mathworld.wolfram.com/StereographicProjection.html
+    const double phi1 {0};
+    const double lam0 {0};
+    double k = (2.0*_r_moon)/(1+sin(phi1)*sin(lat)+ cos(phi1)*cos(lat)*cos(lon-lam0));
+    double x = k*cos(lat)*sin(lon-lam0);
+    double y = k*(cos(phi1)*sin(lat)-sin(phi1)*cos(lat)*cos(lon-lam0));
+    return std::pair<double,double>(x,y);
 }
 
 // converts from stereographic x,y to lat,lon
 std::pair<double,double> TerrainHandler::stereo2latlon(double x_stereo, double y_stereo){
-    //TODO!
-    return std::pair<double,double>(0,0);
+    // https://mathworld.wolfram.com/StereographicProjection.html
+
+    // I dont really need these as their own variables, but 
+    // it makes translation from wolfram easier 
+    const double phi1 {0};
+    const double lam0 {0};
+
+    // some of the following things could def use some optimizations. 
+    // Want to make sure it works though 
+
+    double rho = sqrt((x_stereo*x_stereo)+(y_stereo*y_stereo));
+    double c = 2.0 * atan2(rho, 2.0*_r_moon);
+
+    // phi = lat
+    double phi = asin((cos(c)*sin(phi1))+((y_stereo*sin(c)*cos(phi1))/rho));
+
+    // lam = lon
+    double lam = lam0 + atan2( x_stereo*sin(c), (rho*cos(phi1)*cos(c)) - (y_stereo*sin(phi1)*sin(c))); 
+    return std::pair<double,double>(phi, lam); 
 }
 
 // converts stereographic x,y to an x,y pair that properly correlates with topo map coords
@@ -34,22 +56,22 @@ std::pair<double,double> TerrainHandler::topo2latlon(double x_topo, double y_top
 
 // converts from lat,lon to coords that correlate with the topo maps
 std::pair<int,int> TerrainHandler::latlon2topo(double lat, double lon){
-    //TODO!
-    return std::pair<int,int>(0,0);
+    std::pair<double,double> xy_stereo = latlon2stereo(lat,lon);
+    return stereo2topo(xy_stereo.first, xy_stereo.second);
 }
 
 /**
  * get the tile id for the tile that stereo coords lie in.  
 */
-int TerrainHandler::getTileID(double x, double y){
+int TerrainHandler::getTileIDFromStereo(double x, double y){
     std::pair<int,int> ij = stereo2topo(x,y);
-    return getTileID(ij.first,ij.second);
+    return getTileIDFromIDXs(ij.first,ij.second);
 }
 
 /**
  * @brief get the tile id for topo indeces i j
 */
-int TerrainHandler::getTileID(int i, int j){
+int TerrainHandler::getTileIDFromIDXs(int i, int j){
     return i*_tile_width+j;
 }
 
@@ -86,7 +108,7 @@ double TerrainHandler::getSurfaceHeight(double lat, double lon){
 */
 Eigen::Vector3d TerrainHandler::getNearestPoint(double x, double y){
     std::pair<int,int> ij = stereo2topo(x,y);
-    int id = getTileID(x,y);
+    int id = getTileIDFromStereo(x,y);
     if(_tiles.find(id)==_tiles.end())
         loadTile(id);
 
@@ -102,7 +124,7 @@ Eigen::Vector3d TerrainHandler::getNearestPoint(double x, double y){
  * @brief gets the alt of the ground at indeces i and j rel to top left 
 */
 double TerrainHandler::getAltAtInd(int i, int j){
-    int id = getTileID(i,j);
+    int id = getTileIDFromIDXs(i,j);
     double alt = _tiles[id].ptr.get()[i*_tile_width+j];
     return alt;
 }
@@ -113,7 +135,7 @@ double TerrainHandler::getAltAtInd(int i, int j){
 std::vector<Eigen::Vector3d> TerrainHandler::getNearestPoints(double x, double y){
     // if tile is not loaded:
         // load tile
-    int id = getTileID(x,y);
+    int id = getTileIDFromStereo(x,y);
     if(_tiles.find(id)==_tiles.end())
         loadTile(id);
 
@@ -126,10 +148,18 @@ std::vector<Eigen::Vector3d> TerrainHandler::getNearestPoints(double x, double y
     return std::vector<Eigen::Vector3d>();
 }
 
+/**
+ * @brief loads a tile. Assumes that there was already a check to see if the tile was loaded. 
+*/
 void TerrainHandler::loadTile(int tile_id){
-    int i = floor(tile_id/20);
-    int j = tile_id%20;
-    std::shared_ptr<float> ptr(getTile(i,j),free);
+    // Check if we are here, then there was an issue elsewhere 
+    if(_tiles.find(tile_id) != _tiles.end()){
+        
+        my_exit("Something has gone wrong. Already loaded tile was about to be loaded again. Exiting.");
+    }
+
+    std::pair<int,int> idxs = tileID2Indeces(tile_id);
+    std::shared_ptr<float> ptr(getTile(idxs.first,idxs.second),free);
     Tile temp;
     temp.ptr = ptr;
     temp.used = true;
@@ -204,10 +234,20 @@ void TerrainHandler::manageTiles(){
     //if a tile has not been used in the last iteration, free that memory
     for (auto elem=_tiles.begin(); elem!=_tiles.end(); elem++){
         if(!elem->second.used){
-            _tiles.erase(elem);
+
+            // because shared pointers are being used, data being 
+            // stored in them should be freed when they go out of scope 
+            _tiles.erase(elem); 
             continue;
         }
         elem->second.used=false;
+    }
+
+    // make sure their aren't too many tile loaded
+    if(_tiles.size()>_max_tiles){
+        spdlog::warn("Max number of tiles has been exceeded. Exiting.");
+
+        my_exit(); 
     }
 
     //set the "used" bool to false for all remaining tiles
@@ -250,4 +290,37 @@ void TerrainHandler::printTile(Tile tile){
 
     return;
 
+}
+
+std::pair<int,int> TerrainHandler::tileID2Indeces(int id){  
+    int i = floor(id/_num_tiles_width);
+    int j = id%_num_tiles_width;
+    return std::pair<int,int>(i,j);
+}
+
+/**
+ * @brief prints out some diagnostic info 
+*/
+void TerrainHandler::printCurrTileInfo(){
+    spdlog::info("Tile numbers: ");
+    std::pair<int,int> idxs;
+    std::string msg;
+    for(auto iter=_tiles.begin(); iter!=_tiles.end(); iter++){
+        idxs = tileID2Indeces(iter->first);
+        msg = "(ID: " + std::to_string(iter->first)+") "+std::to_string(idxs.first)+", "+std::to_string(idxs.second);
+        spdlog::info(msg);
+    }
+    msg = "There are "+ std::to_string(_tiles.size()) + " tiles currently loaded";
+    spdlog::info(msg);
+    return;
+}
+
+void TerrainHandler::my_exit(std::string memo){
+    spdlog::warn(memo);
+
+    // Using exit() here should be alright because I am not messing with 
+    // shared memory or other files that need to be closes. 
+    // Could put a block of code above to manage things before exiting if
+    // that becomes a problem.  
+    exit(EXIT_FAILURE);  
 }

@@ -5,6 +5,9 @@
 
 #include "eigen3/Eigen/Core"
 
+//logger
+#include "spdlog/spdlog.h"
+
 // tools to read tiffs
 #include "tinytiff_tools.hxx"
 #include "tinytiffreader.h"
@@ -20,7 +23,14 @@ struct Tile
 class TerrainHandler{
     public:
 
-    TerrainHandler(){}
+    TerrainHandler():
+        _tile_width(2000),
+        _tile_height(2000),
+        _num_tiles_height(20),
+        _num_tiles_width(20),
+        _max_tiles(10), 
+        _r_moon(1736.0) //mean radius of the moon in km at the poles (https://en.wikipedia.org/wiki/Moon)
+    {}
 
     // gets the height agl for a point at latitude lat and longitude lon
     double getAGL(double lat, double lon, double z);
@@ -46,31 +56,50 @@ class TerrainHandler{
     float* getTile(int i, int j);
     void printTile(Tile tile);
 
-    private: 
     
     // removes tiles that are no longer needed after a few iterations of disuse
     void manageTiles();
 
     // get the altitude at given topo indeces (relative to top left)
-    double getAltAtInd(int i, int j);
 
     // given four points, interoplate the surface at the coordinate x,y
     double interpolateSurface(std::vector<Eigen::Vector3d> points, double x, double y);
+    
+    void printCurrTileInfo();
+
+    double getAltPolarCoords(double lat, double lon);
+    
+    private: 
+    
+    double getAltAtInd(int i, int j);
 
     // shared_ptr<uint32_t> getNewTile()
     void loadTile(int tile_id);
-    
+
+    // gets a tile's ID based on stereographic x y coords
+    int getTileIDFromStereo(double x, double y);
+
+    // gets a tile's ID based on topo i j coords
+    int getTileIDFromIDXs(int i, int j);
+
+    // gets tiles indexes from ID
+    std::pair<int,int> tileID2Indeces(int id);
+
+
+    // terminates the program but closes necessary things before hand. 
+    void my_exit(std::string memo = "Default msg: Something has gone wrong. Exiting.");
+
+    // // // Varaibles
+
     // a unordered_map to store currently loaded topographic map tiles
     std::unordered_map<int, Tile > _tiles;
 
-    // gets a tile's ID based on stereographic x y coords
-    int getTileID(double x, double y);
-
-    // gets a tile's ID based on topo i j coords
-    int getTileID(int i, int j);
-
     int _tile_width;
     int _tile_height;
+    int _num_tiles_width;
+    int _num_tiles_height;
+    int _max_tiles;
+    double _r_moon;
      
 };
 

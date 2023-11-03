@@ -16,9 +16,7 @@ struct Particle
 class ParticleFilter{
     public:
 
-    ParticleFilter():
-    _Dt(1.0),
-    _mu_moon(4.9048695e12){}
+    ParticleFilter();
 
     void runPF();
 
@@ -43,7 +41,7 @@ class ParticleFilter{
 
     private:
 
-    TerrainHandler altimeter;
+    TerrainHandler _altimeter;
     
     std::vector<Particle> _particles;
     double _Dt;

@@ -1,15 +1,26 @@
 #include "ParticleFilter.h"
 
+ParticleFilter::ParticleFilter():
+    _Dt(1.0),
+    _mu_moon(4.9048695e12),
+    _altimeter()
+{
+
+}
+
 /**
  * @brief uses a particle filtering algorithm to run one step of 
 */
 void ParticleFilter::runPF(/*a particle filtering algo?, initial states?*/){
     
     //initialize states:
+    _altimeter.getAltPolarCoords(89.0,1.0);
 
     // run pf
 
     // get particles and propogate states based on that 
+
+    //manageTiles();
 
     return;
 }

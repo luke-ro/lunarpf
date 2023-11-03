@@ -1,9 +1,14 @@
 #include <iostream>
 #include <memory>
 
+// TinyTIFF (for reading DTED)
 #include "tinytiff_tools.hxx"
 #include "tinytiffreader.h"
 #include "tinytiffreader.hxx"
+
+// spdlogger (for logging diagnostic data)
+#include "spdlog/spdlog.h"
+
 
 //my libraries
 #include "../src/TerrainHandler.h"
@@ -14,11 +19,6 @@
 
 
 int main(){
-    TerrainHandler th;
-    Tile test_tile;
-    std::shared_ptr<float> ptr(th.getTile(90,90),free);
-    test_tile.ptr = ptr;
 
-    th.printTile(test_tile);
     return 0;
 }
