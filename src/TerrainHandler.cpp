@@ -1,11 +1,13 @@
 #include "TerrainHandler.h"
 
-
+template <typename T> int sgn(T val) {
+    return (T(0) < val) - (val < T(0));
+}
 
 // converts lat.lon to stereographic coords x,y wit origin at south pole
 std::pair<double,double> TerrainHandler::latlon2stereo(double lat, double lon){
     // https://mathworld.wolfram.com/StereographicProjection.html
-    const double phi1 {0};
+    const double phi1 {-90.0*3.14/180.0};
     const double lam0 {0};
     double k = (2.0*_r_moon)/(1+sin(phi1)*sin(lat)+ cos(phi1)*cos(lat)*cos(lon-lam0));
     double x = k*cos(lat)*sin(lon-lam0);
@@ -19,7 +21,7 @@ std::pair<double,double> TerrainHandler::stereo2latlon(double x_stereo, double y
 
     // I dont really need these as their own variables, but 
     // it makes translation from wolfram easier 
-    const double phi1 {0};
+    const double phi1 {-90.0*3.14/180.0};
     const double lam0 {0};
 
     // some of the following things could def use some optimizations. 
@@ -38,20 +40,32 @@ std::pair<double,double> TerrainHandler::stereo2latlon(double x_stereo, double y
 
 // converts stereographic x,y to an x,y pair that properly correlates with topo map coords
 std::pair<int,int> TerrainHandler::stereo2topo(double x_stereo, double y_stereo){
-    //TODO!
+    if(abs(x_stereo)>=99){
+        spdlog::warn("Stereographic x coord out of bounds.");
+        x_stereo = sgn(x_stereo)*99.0;
+    }
+
+    if(abs(y_stereo)>=99){
+        spdlog::warn("Stereographic y coord out of bounds.");
+        y_stereo = sgn(y_stereo)*99.0;
+    }
+
+    // THIS NEEDS FIXING
+    int i = 200*_map_pixels_height-(y_stereo+100*_map_pixels_height);
+
     return std::pair<int,int>(0,0);
 }
 
 //converts from the topo map x,y pair to stereographic x,y
 std::pair<double,double> TerrainHandler::topo2stereo(double x_topo, double y_topo){
-    //TODO!
+    
     return std::pair<double,double>(0,0);
 }
 
 // uses converts from topographific map coords to lat,lon
-std::pair<double,double> TerrainHandler::topo2latlon(double x_topo, double y_topo){
-    //TODO!
-    return std::pair<double,double>(0,0);
+std::pair<double,double> TerrainHandler::topo2latlon(double i_topo, double j_topo){
+    std::pair<double,double> latlon = topo2stereo(i_topo,j_topo);
+    return stereo2latlon(latlon.first,latlon.second);
 }
 
 // converts from lat,lon to coords that correlate with the topo maps
@@ -72,7 +86,7 @@ int TerrainHandler::getTileIDFromStereo(double x, double y){
  * @brief get the tile id for topo indeces i j
 */
 int TerrainHandler::getTileIDFromIDXs(int i, int j){
-    return i*_tile_width+j;
+    return i*_tile_pixel_width+j;
 }
 
 
@@ -125,7 +139,7 @@ Eigen::Vector3d TerrainHandler::getNearestPoint(double x, double y){
 */
 double TerrainHandler::getAltAtInd(int i, int j){
     int id = getTileIDFromIDXs(i,j);
-    double alt = _tiles[id].ptr.get()[i*_tile_width+j];
+    double alt = _tiles[id].ptr.get()[i*_tile_pixel_width+j];
     return alt;
 }
 

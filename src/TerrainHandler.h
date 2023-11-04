@@ -24,13 +24,16 @@ class TerrainHandler{
     public:
 
     TerrainHandler():
-        _tile_width(2000),
-        _tile_height(2000),
+        _tile_pixel_width(2000),
+        _tile_pixel_height(2000),
         _num_tiles_height(20),
         _num_tiles_width(20),
         _max_tiles(10), 
         _r_moon(1736.0) //mean radius of the moon in km at the poles (https://en.wikipedia.org/wiki/Moon)
-    {}
+    {
+        _map_pixels_height = _num_tiles_height*_tile_pixel_height;
+        _map_pixels_width = _num_tiles_width*_tile_pixel_width;
+    }
 
     // gets the height agl for a point at latitude lat and longitude lon
     double getAGL(double lat, double lon, double z);
@@ -94,11 +97,14 @@ class TerrainHandler{
     // a unordered_map to store currently loaded topographic map tiles
     std::unordered_map<int, Tile > _tiles;
 
-    int _tile_width;
-    int _tile_height;
+    int _tile_pixel_width;
+    int _tile_pixel_height;
+    int _map_pixels_width;
+    int _map_pixels_height;
     int _num_tiles_width;
     int _num_tiles_height;
     int _max_tiles;
+
     double _r_moon;
      
 };
