@@ -39,7 +39,7 @@ std::pair<double,double> TerrainHandler::stereo2latlon(double x_stereo, double y
 }
 
 // converts stereographic x,y to an x,y pair that properly correlates with topo map coords
-std::pair<int,int> TerrainHandler::stereo2topo(double x_stereo, double y_stereo){
+std::pair<double,double> TerrainHandler::stereo2topo(double x_stereo, double y_stereo){
     if(abs(x_stereo)>=99){
         spdlog::warn("Stereographic x coord out of bounds.");
         x_stereo = sgn(x_stereo)*99.0;
@@ -50,28 +50,44 @@ std::pair<int,int> TerrainHandler::stereo2topo(double x_stereo, double y_stereo)
         y_stereo = sgn(y_stereo)*99.0;
     }
 
-    // THIS NEEDS FIXING
-    int i = 200*_map_pixels_height-(y_stereo+100*_map_pixels_height);
+    double x = (x_stereo+100.0);
 
-    return std::pair<int,int>(0,0);
+    // THIS NEEDS FIXING
+    // double i_double = .0-y_stereo;
+    double y = (100.0-y_stereo);
+
+    return std::pair<double,double>(x,y);
 }
 
-//converts from the topo map x,y pair to stereographic x,y
+// converts from coords that have origin in top left to stereographic x,y
 std::pair<double,double> TerrainHandler::topo2stereo(double x_topo, double y_topo){
     
-    return std::pair<double,double>(0,0);
+    double x_stereo = x_topo - 100;
+
+    double y_stereo = -y_topo + 100;
+    return std::pair<double,double>(x_stereo,y_stereo);
 }
 
-// uses converts from topographific map coords to lat,lon
-std::pair<double,double> TerrainHandler::topo2latlon(double i_topo, double j_topo){
-    std::pair<double,double> latlon = topo2stereo(i_topo,j_topo);
+// uses converts from coords that have origin in top left to lat,lon
+std::pair<double,double> TerrainHandler::topo2latlon(double x_topo, double y_topo){
+    std::pair<double,double> latlon = topo2stereo(x_topo,y_topo);
     return stereo2latlon(latlon.first,latlon.second);
 }
 
-// converts from lat,lon to coords that correlate with the topo maps
-std::pair<int,int> TerrainHandler::latlon2topo(double lat, double lon){
+// converts from lat,lon to coords that have origin at top left of map
+std::pair<double,double> TerrainHandler::latlon2topo(double lat, double lon){
     std::pair<double,double> xy_stereo = latlon2stereo(lat,lon);
     return stereo2topo(xy_stereo.first, xy_stereo.second);
+}
+
+// convertes coordinates with origin at top left of map to map indeces
+std::pair<int,int> TerrainHandler::topo2idxs(double x_topo, double y_topo){
+    return std::pair<int,int> (int(y_topo*_map_pixels_height), int(x_topo*_map_pixels_width));
+}
+
+// converts map indeces to continuous points with origin at top left of map
+std::pair<double,double> TerrainHandler::idxs2topo(int i_map, double j_map){
+    return std::pair<double,double> (double(j_map)/_map_pixels_width, double(i_map)/_map_pixels_height);
 }
 
 /**

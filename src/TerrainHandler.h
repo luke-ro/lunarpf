@@ -47,14 +47,17 @@ class TerrainHandler{
     std::pair<double,double> stereo2latlon(double x_stereo, double y_stereo);
 
     // converts stereographic x,y to an x,y pair that properly correlates with topo map coords
-    std::pair<int,int> stereo2topo(double x_stereo, double y_stereo);
+    std::pair<double,double> stereo2topo(double x_stereo, double y_stereo);
     //converts from the topo map x,y pair to stereographic x,y
-    std::pair<double,double> topo2stereo(double x_topo, double y_topo);
+    std::pair<double,double> topo2stereo(double i_topo, double j_topo);
 
     // uses converts from topographific map coords to lat,lon
-    std::pair<double,double> topo2latlon(double x_topo, double y_topo);
+    std::pair<double,double> topo2latlon(double i_topo, double j_topo);
     // converts from lat,lon to coords that correlate with the topo maps
-    std::pair<int,int> latlon2topo(double lat, double lon);
+    std::pair<double,double> latlon2topo(double lat, double lon);
+
+    std::pair<int,int> topo2idxs(double i_topo, double j_topo);
+    std::pair<double,double> idxs2topo(int i_map, double j_map);
 
     float* getTile(int i, int j);
     void printTile(Tile tile);
