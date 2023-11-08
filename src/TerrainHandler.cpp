@@ -82,7 +82,7 @@ std::pair<double,double> TerrainHandler::latlon2topo(double lat, double lon){
 
 // convertes coordinates with origin at top left of map to map indeces
 std::pair<int,int> TerrainHandler::topo2idxs(double x_topo, double y_topo){
-    return std::pair<int,int> (int(y_topo*_map_pixels_height), int(x_topo*_map_pixels_width));
+    return std::pair<int,int> (int(y_topo*_tile_pixel_height), int(x_topo*_tile_pixel_width));
 }
 
 // converts map indeces to continuous points with origin at top left of map
@@ -94,15 +94,19 @@ std::pair<double,double> TerrainHandler::idxs2topo(int i_map, double j_map){
  * get the tile id for the tile that stereo coords lie in.  
 */
 int TerrainHandler::getTileIDFromStereo(double x, double y){
-    std::pair<int,int> ij = stereo2topo(x,y);
-    return getTileIDFromIDXs(ij.first,ij.second);
+    std::pair<double,double> topo = stereo2topo(x,y);
+    std::pair<int,int> ij = topo2idxs(topo.first, topo.second);
+    // getTileIDFromIDXs(ij.first,ij.second);
+    std::pair<int,int> tile_ij(ij.first/_tile_pixel_height,ij.second/_tile_pixel_width);
+    return getTileIDFromIDXs(tile_ij.first, tile_ij.second);
+
 }
 
 /**
  * @brief get the tile id for topo indeces i j
 */
 int TerrainHandler::getTileIDFromIDXs(int i, int j){
-    return i*_tile_pixel_width+j;
+    return i*_num_tiles_width+j;
 }
 
 
@@ -119,7 +123,7 @@ double TerrainHandler::getAGL(double lat, double lon, double r){\
  * @brief get the height of the surface of the moon at lat lon
 */
 double TerrainHandler::getSurfaceHeight(double lat, double lon){
-    std::pair<double,double> xy_topo = latlon2topo(lat,lon);
+    std::pair<double,double> xy_ster = latlon2stereo(lat,lon);
 
     // TODO Interpolate between adjacent cells
     // // get nearest points to 
@@ -128,16 +132,16 @@ double TerrainHandler::getSurfaceHeight(double lat, double lon){
     // // get interpolated value at xy
     // double alt = interpolateSurface(nearest, xy_topo.first, xy_topo.second);
 
-    Eigen::Vector3d near = getNearestPoint(xy_topo.first,xy_topo.second);
+    Eigen::Vector3d near = getNearestPoint(xy_ster.first,xy_ster.second);
 
     return near[2];
 }
 
 /**
- * @brief gets the point nearest to topographic x y 
+ * @brief gets the point nearest to stereographic x y 
 */
 Eigen::Vector3d TerrainHandler::getNearestPoint(double x, double y){
-    std::pair<int,int> ij = stereo2topo(x,y);
+    std::pair<double,double> xy_topo = stereo2topo(x,y);
     int id = getTileIDFromStereo(x,y);
     if(_tiles.find(id)==_tiles.end())
         loadTile(id);
@@ -145,6 +149,7 @@ Eigen::Vector3d TerrainHandler::getNearestPoint(double x, double y){
     // set used to true
     _tiles[id].used = true;
 
+    auto ij = topo2idxs(xy_topo.first, xy_topo.second);
     double alt = getAltAtInd(ij.first, ij.second);
 
     return Eigen::Vector3d(double(ij.first),double(ij.second),alt);
