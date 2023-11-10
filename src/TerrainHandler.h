@@ -30,7 +30,7 @@ class TerrainHandler{
         _num_tiles_width(20),
         _km_tile_height(10),
         _km_tile_width(10),
-        _max_tiles(10), 
+        _max_tiles(25), 
         _r_moon(1736.0) //mean radius of the moon in km at the poles (https://en.wikipedia.org/wiki/Moon)
     {
         _map_pixels_height = _num_tiles_height*_tile_pixel_height;
