@@ -272,12 +272,14 @@ double TerrainHandler::interpolateSurface(std::vector<Eigen::Vector3d> points, d
 
 void TerrainHandler::manageTiles(){
     //if a tile has not been used in the last iteration, free that memory
-    for (auto elem=_tiles.begin(); elem!=_tiles.end(); elem++){
+    // for (auto elem=_tiles.begin(); elem!=_tiles.end(); elem++){
+    auto elem = _tiles.begin();
+    while(elem!=_tiles.end()){
         if(!elem->second.used){
 
             // because shared pointers are being used, data being 
             // stored in them should be freed when they go out of scope 
-            _tiles.erase(elem); 
+            elem = _tiles.erase(elem); 
             continue;
         }
         elem->second.used=false;
