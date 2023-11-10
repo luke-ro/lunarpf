@@ -283,6 +283,7 @@ void TerrainHandler::manageTiles(){
             continue;
         }
         elem->second.used=false;
+        elem++;
     }
 
     // make sure their aren't too many tile loaded
