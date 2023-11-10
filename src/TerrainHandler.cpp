@@ -82,7 +82,7 @@ std::pair<double,double> TerrainHandler::latlon2topo(double lat, double lon){
 
 // convertes coordinates with origin at top left of map to map indeces
 std::pair<int,int> TerrainHandler::topo2idxs(double x_topo, double y_topo){
-    return std::pair<int,int> (int(y_topo*_tile_pixel_height), int(x_topo*_tile_pixel_width));
+    return std::pair<int,int> (int(y_topo*_tile_pixel_height/_km_tile_height), int(x_topo*_tile_pixel_width/_km_tile_width));
 }
 
 // converts map indeces to continuous points with origin at top left of map
@@ -97,8 +97,8 @@ int TerrainHandler::getTileIDFromStereo(double x, double y){
     std::pair<double,double> topo = stereo2topo(x,y);
     std::pair<int,int> ij = topo2idxs(topo.first, topo.second);
     // getTileIDFromIDXs(ij.first,ij.second);
-    std::pair<int,int> tile_ij(ij.first/_tile_pixel_height,ij.second/_tile_pixel_width);
-    return getTileIDFromIDXs(tile_ij.first, tile_ij.second);
+    // std::pair<int,int> tile_ij(ij.first/_tile_pixel_height,ij.second/_tile_pixel_width);
+    return getTileIDFromIDXs(ij.first, ij.second);
 
 }
 
@@ -106,7 +106,7 @@ int TerrainHandler::getTileIDFromStereo(double x, double y){
  * @brief get the tile id for topo indeces i j
 */
 int TerrainHandler::getTileIDFromIDXs(int i, int j){
-    return i*_num_tiles_width+j;
+    return _num_tiles_width*(i/_tile_pixel_height)+(j/_tile_pixel_width);
 }
 
 
@@ -160,8 +160,13 @@ Eigen::Vector3d TerrainHandler::getNearestPoint(double x, double y){
 */
 double TerrainHandler::getAltAtInd(int i, int j){
     int id = getTileIDFromIDXs(i,j);
-    double alt = _tiles[id].ptr.get()[i*_tile_pixel_width+j];
+    auto ij_local = getLocalij(i,j);
+    double alt = _tiles[id].ptr.get()[ij_local.first*_tile_pixel_width+ij_local.second];
     return alt;
+}
+
+std::pair<int,int> TerrainHandler::getLocalij(int i,int j){
+    return std::pair<int,int> (i-((i/_tile_pixel_height)*_tile_pixel_height), j-((j/_tile_pixel_width)*_tile_pixel_width));
 }
 
 /**
@@ -210,14 +215,14 @@ void TerrainHandler::loadTile(int tile_id){
 */
 float* TerrainHandler::getTile(int i, int j){
     std::string filename =  "/media/sf_repos/lunarpf/topo_maps/x_000_y_000_km.tiff";
-    std::string si = std::to_string(i);
-    std::string sj = std::to_string(j);
+    std::string si = std::to_string(i*10);
+    std::string sj = std::to_string(j*10);
 
     for(int k=si.length()-1; k>=0; k--)
         filename[k+37] = si[k];
 
     for(int m=sj.length()-1; m>=0; m--)
-        filename[m+43] = si[m];
+        filename[m+42] = sj[m];
 
     const char* c_filename = filename.c_str();
     TinyTIFFReaderFile* tiffr=NULL;

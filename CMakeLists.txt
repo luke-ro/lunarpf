@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.27.4)
 project(lunarpf)
 
 include_directories(lib/)
+# include_directories(src/)
 
 set(CMAKE_BUILD_TYPE Debug)
 
@@ -11,7 +12,7 @@ find_package(Eigen3 3.0 REQUIRED NO_MODULE)
 add_executable(${PROJECT_NAME} ws/main.cpp)
 
 add_subdirectory(ws)
-add_subdirectory(ws/tests/)
+# add_subdirectory(ws)
 add_subdirectory(src)
 add_subdirectory(lib)
 

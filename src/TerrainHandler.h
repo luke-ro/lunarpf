@@ -28,6 +28,8 @@ class TerrainHandler{
         _tile_pixel_height(2000),
         _num_tiles_height(20),
         _num_tiles_width(20),
+        _km_tile_height(10),
+        _km_tile_width(10),
         _max_tiles(10), 
         _r_moon(1736.0) //mean radius of the moon in km at the poles (https://en.wikipedia.org/wiki/Moon)
     {
@@ -79,6 +81,9 @@ class TerrainHandler{
     
     double getAltAtInd(int i, int j);
 
+    // gets the indeces i j for the tile that the gloabal i j lie in. 
+    std::pair<int,int> getLocalij(int i,int j);
+
     // shared_ptr<uint32_t> getNewTile()
     void loadTile(int tile_id);
 
@@ -106,6 +111,8 @@ class TerrainHandler{
     int _map_pixels_height;
     int _num_tiles_width;
     int _num_tiles_height;
+    double _km_tile_height;
+    double _km_tile_width;
     int _max_tiles;
 
     double _r_moon;
