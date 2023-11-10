@@ -62,7 +62,9 @@ class TerrainHandler{
     std::pair<double,double> idxs2topo(int i_map, double j_map);
 
     float* getTile(int i, int j);
-    void printTile(Tile tile);
+    void printTile(const Tile& tile);
+    void printTileInterp(double x_ster_min, double x_ster_max, int n_x, double y_ster_min, double y_ster_max, int n_y);
+    void printTileByID(int tileID);
 
     
     // removes tiles that are no longer needed after a few iterations of disuse
@@ -73,7 +75,7 @@ class TerrainHandler{
     // given four points, interoplate the surface at the coordinate x,y
     double interpolateSurface(std::vector<Eigen::Vector3d> points, double x, double y);
     
-    void printCurrTileInfo();
+    std::vector<int> printCurrTileInfo();
 
     double getAltPolarCoords(double lat, double lon);
     

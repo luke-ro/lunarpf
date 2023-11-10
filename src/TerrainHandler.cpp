@@ -143,8 +143,8 @@ double TerrainHandler::getSurfaceHeight(double lat, double lon){
 Eigen::Vector3d TerrainHandler::getNearestPoint(double x, double y){
     std::pair<double,double> xy_topo = stereo2topo(x,y);
     int id = getTileIDFromStereo(x,y);
-    if(_tiles.find(id)==_tiles.end())
-        loadTile(id);
+
+    loadTile(id);
 
     // set used to true
     _tiles[id].used = true;
@@ -161,7 +161,7 @@ Eigen::Vector3d TerrainHandler::getNearestPoint(double x, double y){
 double TerrainHandler::getAltAtInd(int i, int j){
     int id = getTileIDFromIDXs(i,j);
     auto ij_local = getLocalij(i,j);
-    double alt = _tiles[id].ptr.get()[ij_local.first*_tile_pixel_width+ij_local.second];
+    double alt = _tiles.at(id).ptr.get()[ij_local.first*_tile_pixel_width+ij_local.second];
     return alt;
 }
 
@@ -193,9 +193,13 @@ std::vector<Eigen::Vector3d> TerrainHandler::getNearestPoints(double x, double y
 */
 void TerrainHandler::loadTile(int tile_id){
     // Check if we are here, then there was an issue elsewhere 
+    std::cout<<"tile_id: "<< tile_id<<"\n";
     if(_tiles.find(tile_id) != _tiles.end()){
         
-        my_exit("Something has gone wrong. Already loaded tile was about to be loaded again. Exiting.");
+        // my_exit("Something has gone wrong. Already loaded tile was about to be loaded again. Exiting.");
+        
+        //tile already loaded, return
+        return;
     }
 
     std::pair<int,int> idxs = tileID2Indeces(tile_id);
@@ -217,40 +221,42 @@ float* TerrainHandler::getTile(int i, int j){
     std::string filename =  "/media/sf_repos/lunarpf/topo_maps/x_000_y_000_km.tiff";
     std::string si = std::to_string(i*10);
     std::string sj = std::to_string(j*10);
+    std::cout<<"si: "<<si<<"\n";
+    std::cout<<"sj: "<<sj<<"\n";
 
-    for(int k=si.length()-1; k>=0; k--)
-        filename[k+37] = si[k];
+    for(int k=0; k<si.length(); k--)
+        filename[39-si.length()+k] = si[k];
 
-    for(int m=sj.length()-1; m>=0; m--)
-        filename[m+42] = sj[m];
+    for(int m=0; m<sj.length(); m--)
+        filename[45-sj.length()+m] = sj[m];
 
     const char* c_filename = filename.c_str();
     TinyTIFFReaderFile* tiffr=NULL;
     tiffr=TinyTIFFReader_open(c_filename); 
 
-    std::cout<<c_filename<<"\n";
+    // std::cout<<c_filename<<"\n";
     if (!tiffr) { 
         std::cout<<"    ERROR reading (not existent, not accessible or no TIFF file)\n"; 
         std::cout<<"Attempted to read in: "<<filename<<"\n";
     } else { 
         const uint32_t width=TinyTIFFReader_getWidth(tiffr); 
         const uint32_t height=TinyTIFFReader_getHeight(tiffr);
-        std::cout<<"width: "<<width<<"\n";
-        std::cout<<"width: "<<height<<"\n";
+        // std::cout<<"width: "<<width<<"\n";
+        // std::cout<<"width: "<<height<<"\n";
         const uint16_t bitspersample=TinyTIFFReader_getBitsPerSample(tiffr, 0);      
         std::cout<<bitspersample<<"\n";
         
         float* image=(float*)calloc(width*height, bitspersample/8);  
         TinyTIFFReader_getSampleData(tiffr, image, 0); 
                 
-        std::cout<<"here\n";
+        // std::cout<<"here\n";
         // for(int i=height-1;i>=0; i--){
         float data;
         // for(int i=height-2; i<height; i++){
         int i = height-1;
         for (int j=width-51; j<width;j++){
             data = (image)[i*width+j];
-            printf("%f\n",data);
+            // printf("%f\n",data);
             // float temp = ((float*)image)[i*j];
         }
 
@@ -297,15 +303,21 @@ void TerrainHandler::manageTiles(){
     return;
 }
 
-void TerrainHandler::printTile(Tile tile){
+void TerrainHandler::printTileByID(int tileID){
+    loadTile(tileID);
+    printTile(_tiles.at(tileID));
+    return;
+}
+
+void TerrainHandler::printTile(const Tile& tile){
     const int num_chars = 69;
     char chars[num_chars] = {'$','@','B','%','8','&','W','M','#','*','o','a','h','k','b','d','p','q','w','m','Z','O','0','Q','L','C','J','U','Y','X','z','c','v','u','n','x','r','j','f','t','1','{','}','[',']','?','/','\\','|','(',')','<','>','i','!','+','~','l','I',';',':','-','_',',','\"','^','`','\'','.'};
     const int box_size = 40; 
     const int box_elems = box_size*box_size;
     const int n_boxes = 2000/box_size;
 
-    double min = -1900;
-    double max = 2000;
+    double min = -4000;
+    double max = 3000;
 
     char to_print[n_boxes*n_boxes] = {0};
     double intensity;
@@ -316,6 +328,7 @@ void TerrainHandler::printTile(Tile tile){
                 int offset = (((i*box_size+k)*2000) + j*box_size);
                 for(int m=0; m<box_size; m++){
                     intensity+=(tile.ptr.get()[offset+m])/box_elems;
+
                 }
             }
             // std::cout<<intensity<<", ";
@@ -335,6 +348,60 @@ void TerrainHandler::printTile(Tile tile){
 
 }
 
+
+void TerrainHandler::printTileInterp(double x_ster_min, double x_ster_max, int n_x, double y_ster_min, double y_ster_max, int n_y){
+    const int num_chars = 69;
+    char chars[num_chars] = {'$','@','B','%','8','&','W','M','#','*','o','a','h','k','b','d','p','q','w','m','Z','O','0','Q','L','C','J','U','Y','X','z','c','v','u','n','x','r','j','f','t','1','{','}','[',']','?','/','\\','|','(',')','<','>','i','!','+','~','l','I',';',':','-','_',',','\"','^','`','\'','.'};
+    // const int box_size = 40; 
+    // const int box_elems = box_size*box_size;
+    // const int n_boxes = 2000/box_size;
+
+    double min = -4000;
+    double max = 3000;
+
+    char to_print[(n_x+1)*(n_y+1)] = {0};
+    double intensity;
+
+    // std::pair<int,int> tile_idxs = tileID2Indeces(tile_ID);
+    
+    double x_step = (x_ster_max-x_ster_min)/n_x;
+    double y_step = (y_ster_max-y_ster_min)/n_y;
+
+    Eigen::Vector3d pt;
+    int i = 0;
+    for(double yy=y_ster_min; yy<y_ster_max; yy+=y_step){
+
+        int j = 0;
+        for(double xx=x_ster_min; xx<=x_ster_max; xx+=x_step){
+            std::cout<<"xx: "<<xx; 
+            std::cout<<", yy: "<<yy<<"\n"; 
+            pt = getNearestPoint(xx,yy);
+            intensity = pt[2];
+
+            // std::cout<<intensity<<", ";
+            to_print[i*n_x+j] = chars[int(floor(double(num_chars)*(intensity-min)/(max-min)))];
+
+            j++;
+        }
+        // std::cout<<"\n";
+        i++;
+        printCurrTileInfo();
+        manageTiles();
+    }
+
+    for(int i=n_y;i>=0;i--){
+        for(int j=0;j<n_x;j++){
+            std::cout<<to_print[i*n_x+j]<<" ";
+        }
+        std::cout<<"\n";
+    }
+
+    return;
+
+}
+
+
+
 std::pair<int,int> TerrainHandler::tileID2Indeces(int id){  
     int i = floor(id/_num_tiles_width);
     int j = id%_num_tiles_width;
@@ -342,20 +409,22 @@ std::pair<int,int> TerrainHandler::tileID2Indeces(int id){
 }
 
 /**
- * @brief prints out some diagnostic info 
+ * @brief prints out some diagnostic info, returns tile IDs
 */
-void TerrainHandler::printCurrTileInfo(){
+std::vector<int> TerrainHandler::printCurrTileInfo(){
     spdlog::info("Tile numbers: ");
     std::pair<int,int> idxs;
+    std::vector<int> IDs;
     std::string msg;
     for(auto iter=_tiles.begin(); iter!=_tiles.end(); iter++){
         idxs = tileID2Indeces(iter->first);
         msg = "(ID: " + std::to_string(iter->first)+") "+std::to_string(idxs.first)+", "+std::to_string(idxs.second);
         spdlog::info(msg);
+        IDs.push_back(iter->first);
     }
     msg = "There are "+ std::to_string(_tiles.size()) + " tiles currently loaded";
     spdlog::info(msg);
-    return;
+    return IDs;
 }
 
 void TerrainHandler::my_exit(std::string memo){
